@@ -1,0 +1,32 @@
+{
+  "properties": [
+    {
+      "name": "method.metrics.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Включение или отключение сбора метрик методов.",
+      "defaultValue": true
+    },
+    {
+      "name": "method.metrics.prefix",
+      "type": "java.lang.String",
+      "description": "Префикс для всех метрик методов. Добавляется перед именем метода в метриках Prometheus.",
+      "defaultValue": "method"
+    },
+    {
+      "name": "method.metrics.histogram",
+      "type": "java.lang.Boolean",
+      "description": "Включение или отключение гистограмм для времени выполнения методов.",
+      "defaultValue": true
+    },
+    {
+      "name": "method.metrics.percentiles",
+      "type": "java.lang.Double[]",
+      "description": "Процентили для гистограмм. Определяет, для каких процентилей рассчитывать значения (например, p50, p95, p99).",
+      "defaultValue": [
+        0.5,
+        0.95,
+        0.99
+      ]
+    }
+  ]
+}
