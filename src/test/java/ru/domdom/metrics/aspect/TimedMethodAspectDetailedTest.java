@@ -1,8 +1,7 @@
-package com.dom_dom.metrics.aspect;
+package ru.domdom.metrics.aspect;
 
-import com.dom_dom.metrics.annotation.TimedMethod;
-import com.dom_dom.metrics.service.TimedMethodProcessor;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import ru.domdom.metrics.annotation.TimedMethod;
+import ru.domdom.metrics.service.TimedMethodProcessor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.junit.jupiter.api.BeforeEach;

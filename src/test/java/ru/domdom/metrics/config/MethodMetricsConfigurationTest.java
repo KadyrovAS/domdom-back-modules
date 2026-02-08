@@ -1,7 +1,8 @@
-package com.dom_dom.metrics.autoconfigure;
+package ru.domdom.metrics.config;
 
-import com.dom_dom.metrics.annotation.TimedMethod;
-import com.dom_dom.metrics.service.TimedMethodProcessor;
+import ru.domdom.metrics.annotation.TimedMethod;
+import ru.domdom.metrics.aspect.TimedMethodAspect;
+import ru.domdom.metrics.service.TimedMethodProcessor;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
@@ -115,7 +116,7 @@ class MethodMetricsConfigurationTest {
             // При отключенных метриках автоконфигурация не должна создавать бины
             assertThat(context).doesNotHaveBean(MethodMetricsProperties.class);
             assertThat(context).doesNotHaveBean(TimedMethodProcessor.class);
-            assertThat(context).doesNotHaveBean(com.dom_dom.metrics.aspect.TimedMethodAspect.class);
+            assertThat(context).doesNotHaveBean(TimedMethodAspect.class);
             // MeterRegistry из TestConfig должен быть
             assertThat(context).hasSingleBean(MeterRegistry.class);
         });

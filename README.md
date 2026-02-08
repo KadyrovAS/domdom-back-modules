@@ -44,13 +44,13 @@ management:
 Помечайте методы аннотацией `@TimedMethod`:
 
 ```java
-import com.dom_dom.metrics.annotation.TimedMethod;
+import annotation.ru.domdom.metrics.TimedMethod;
 
 @Service
 public class UserService {
-    
-    @TimedMethod(value = "user.service.getUser", 
-                description = "Получение пользователя по ID")
+
+    @TimedMethod(value = "user.service.getUser",
+            description = "Получение пользователя по ID")
     public User getUser(Long id) {
         return userRepository.findById(id);
     }

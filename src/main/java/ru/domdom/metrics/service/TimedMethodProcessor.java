@@ -1,7 +1,9 @@
-package com.dom_dom.metrics.service;
+package ru.domdom.metrics.service;
 
-import com.dom_dom.metrics.annotation.TimedMethod;
-import com.dom_dom.metrics.autoconfigure.MethodMetricsProperties;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import ru.domdom.metrics.annotation.TimedMethod;
+import ru.domdom.metrics.config.MethodMetricsProperties;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -16,6 +18,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 @Service
+@Slf4j
+@RequiredArgsConstructor
 public class TimedMethodProcessor {
 
     private final MeterRegistry meterRegistry;
@@ -23,15 +27,6 @@ public class TimedMethodProcessor {
     private final ConcurrentMap<String, Timer> timerCache = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Counter> counterCache = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, TimedMethod> annotationCache = new ConcurrentHashMap<>();
-
-    private static final org.slf4j.Logger logger =
-            org.slf4j.LoggerFactory.getLogger(TimedMethodProcessor.class);
-
-    @Autowired
-    public TimedMethodProcessor(MeterRegistry meterRegistry, MethodMetricsProperties properties) {
-        this.meterRegistry = meterRegistry;
-        this.properties = properties;
-    }
 
     public void createTimerForMethod(String metricKey, TimedMethod annotation, Method method) {
         if (timerCache.containsKey(metricKey) && counterCache.containsKey(metricKey)) {
@@ -91,7 +86,7 @@ public class TimedMethodProcessor {
             meterRegistry.remove(counter);
         }
 
-        logger.debug("Created timer and counter for method: {}", metricKey);
+        log.debug("Created timer and counter for method: {}", metricKey);
     }
 
     public void recordExecution(String metricKey, long durationNanos) {
@@ -108,7 +103,7 @@ public class TimedMethodProcessor {
             // Записываем время выполнения
             timer.record(durationNanos, TimeUnit.NANOSECONDS);
         } else {
-            logger.warn("Timer or counter not found for method: {}. Metric will not be recorded.", metricKey);
+            log.warn("Timer or counter not found for method: {}. Metric will not be recorded.", metricKey);
         }
     }
 

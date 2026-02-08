@@ -1,41 +1,38 @@
-package com.dom_dom.metrics.autoconfigure;
+package ru.domdom.metrics.config;
 
-import com.dom_dom.metrics.aspect.TimedMethodAspect;
-import com.dom_dom.metrics.service.TimedMethodProcessor;
+import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Role;
+import ru.domdom.metrics.aspect.TimedMethodAspect;
+import ru.domdom.metrics.service.TimedMethodProcessor;
 
-/**
- * Автоконфигурация Spring Boot для сбора метрик методов с ленивой инициализацией.
- *
- * @author Кадыров Андрей
- * @since 2.0.0
- */
 @AutoConfiguration
-@ConditionalOnClass(name = "io.micrometer.core.instrument.MeterRegistry")
+@ConditionalOnClass(MeterRegistry.class)
 @EnableConfigurationProperties(MethodMetricsProperties.class)
-@ConditionalOnProperty(prefix = "method.metrics", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(
+        prefix = "method.metrics",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = true
+)
 public class MethodMetricsAutoConfiguration {
 
-    /**
-     * Создает бин TimedMethodProcessor.
-     */
     @Bean
     @ConditionalOnMissingBean
     public TimedMethodProcessor timedMethodProcessor(
-            io.micrometer.core.instrument.MeterRegistry meterRegistry,
+            MeterRegistry meterRegistry,
             MethodMetricsProperties properties) {
         return new TimedMethodProcessor(meterRegistry, properties);
     }
 
-    /**
-     * Создает бин TimedMethodAspect.
-     */
     @Bean
+    @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
     @ConditionalOnMissingBean
     public TimedMethodAspect timedMethodAspect(TimedMethodProcessor processor) {
         return new TimedMethodAspect(processor);

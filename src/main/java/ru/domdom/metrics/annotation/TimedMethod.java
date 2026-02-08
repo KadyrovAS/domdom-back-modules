@@ -1,4 +1,4 @@
-package com.dom_dom.metrics.annotation;
+package ru.domdom.metrics.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
