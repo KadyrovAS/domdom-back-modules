@@ -14,27 +14,21 @@ import org.springframework.stereotype.Component;
 import ru.domdom.metrics.annotation.TimedMethod;
 import ru.domdom.metrics.config.MethodMetricsAutoConfiguration;
 
-import java.util.concurrent.TimeUnit;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Базовый интеграционный тест для проверки работы {@link TimedMethodAspect}.
+ * Интеграционный тест для проверки использования кастомного префикса метрик.
  * <p>
- * Проверяет:
- * <ul>
- *   <li>создание таймера и счётчика при вызове аннотированного метода</li>
- *   <li>применение дополнительных тегов из аннотации</li>
- * </ul>
- * Префикс метрик фиксирован через свойство {@code method.metrics.prefix=method}.
+ * Устанавливает свойство {@code method.metrics.prefix=myapp} и проверяет,
+ * что имена созданных метрик начинаются с {@code myapp.}.
  * </p>
  *
  * @author Кадыров Андрей
  * @since 1.0.0
  */
-@SpringBootTest(properties = "method.metrics.prefix=method")
-@Import({ MethodMetricsAutoConfiguration.class, AopAutoConfiguration.class, TimedMethodAspectIntegrationTest.TestConfig.class })
-public class TimedMethodAspectIntegrationTest {
+@SpringBootTest(properties = "method.metrics.prefix=myapp")
+@Import({ MethodMetricsAutoConfiguration.class, AopAutoConfiguration.class, MethodMetricsCustomPrefixTest.TestConfig.class })
+public class MethodMetricsCustomPrefixTest {
 
     @Autowired
     private TestService testService;
@@ -58,41 +52,22 @@ public class TimedMethodAspectIntegrationTest {
 
     @Component
     static class TestService {
-        @TimedMethod(value = "test.service.method", description = "Test method")
+        @TimedMethod(value = "custom.method")
         public String annotatedMethod() {
             return "hello";
-        }
-
-        @TimedMethod(extraTags = {"env=test"})
-        public String methodWithTags() {
-            return "world";
         }
     }
 
     @Test
-    void shouldRecordMetricsForAnnotatedMethod() {
+    void shouldUseCustomPrefix() {
         testService.annotatedMethod();
 
-        var timer = meterRegistry.find("method.test.service.method.duration").timer();
-        var counter = meterRegistry.find("method.test.service.method.calls").counter();
+        var timer = meterRegistry.find("myapp.custom.method.duration").timer();
+        var counter = meterRegistry.find("myapp.custom.method.calls").counter();
 
         assertThat(timer).isNotNull();
         assertThat(counter).isNotNull();
         assertThat(timer.count()).isEqualTo(1);
         assertThat(counter.count()).isEqualTo(1);
-        assertThat(timer.totalTime(TimeUnit.NANOSECONDS)).isPositive();
-    }
-
-    @Test
-    void shouldApplyTagsFromAnnotation() {
-        testService.methodWithTags();
-
-        var timer = meterRegistry.find("method.TestService.methodWithTags.duration")
-                .tag("env", "test").timer();
-        var counter = meterRegistry.find("method.TestService.methodWithTags.calls")
-                .tag("env", "test").counter();
-
-        assertThat(timer).isNotNull();
-        assertThat(counter).isNotNull();
     }
 }

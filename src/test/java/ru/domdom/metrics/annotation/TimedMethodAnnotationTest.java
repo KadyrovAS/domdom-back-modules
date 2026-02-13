@@ -14,18 +14,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <ul>
  *   <li>Наличие правильных мета-аннотаций</li>
  *   <li>Работу атрибутов аннотации</li>
- *   <li>Поддержку различных типов методов</li>
  *   <li>Корректность значений по умолчанию</li>
  * </ul>
  *
- * @author Андрей
+ * @author Кадыров Андрей
  * @since 1.0.0
  */
 class TimedMethodAnnotationTest {
 
-    /**
-     * Проверяет, что аннотация присутствует в runtime и имеет правильные мета-аннотации.
-     */
     @Test
     void annotationShouldBePresentOnRuntime() {
         assertThat(TimedMethod.class)
@@ -33,11 +29,6 @@ class TimedMethodAnnotationTest {
                 .hasAnnotations(Retention.class, Target.class);
     }
 
-    /**
-     * Проверяет, что аннотация имеет корректные атрибуты и их значения.
-     *
-     * @throws NoSuchMethodException если метод не найден
-     */
     @Test
     void annotationShouldHaveCorrectAttributes() throws NoSuchMethodException {
         class TestClass {
@@ -53,6 +44,4 @@ class TimedMethodAnnotationTest {
         assertThat(annotation.description()).isEqualTo("Test");
         assertThat(annotation.extraTags()).containsExactly("a=b");
     }
-
-    // ... остальные тестовые методы с аналогичными Javadoc комментариями
 }

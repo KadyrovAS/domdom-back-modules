@@ -3,20 +3,18 @@ package ru.domdom.metrics.config;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import java.util.Arrays;
-
 /**
  * Конфигурационные свойства для сбора метрик методов.
  *
- * <p>Настройки позволяют контролировать поведение сбора метрик:</p>
+ * <p>Настройки позволяют контролировать поведение сбора метрик:
  * <ul>
- *   <li>Включение/отключение сбора метрик</li>
- *   <li>Настройка префикса для имен метрик</li>
- *   <li>Включение/отключение гистограмм</li>
- *   <li>Настройка процентилей для гистограмм</li>
+ *   <li>{@code enabled} – включение/отключение сбора метрик</li>
+ *   <li>{@code prefix} – префикс для всех метрик методов</li>
+ *   <li>{@code histogram} – включение гистограмм для распределения времени</li>
+ *   <li>{@code percentiles} – процентили для гистограмм</li>
  * </ul>
  *
- * <p>Пример конфигурации в application.yml:</p>
+ * <p>Пример конфигурации в application.yml:
  * <pre>
  * method:
  *   metrics:
@@ -33,58 +31,39 @@ import java.util.Arrays;
 @ConfigurationProperties(prefix = "method.metrics", ignoreInvalidFields = true)
 public class MethodMetricsProperties {
 
+    /**
+     * Включение или отключение сбора метрик методов.
+     * По умолчанию {@code true}.
+     */
     private boolean enabled = true;
+
+    /**
+     * Префикс для всех метрик методов. Добавляется перед именем метрики.
+     * По умолчанию {@code "method"}.
+     */
     private String prefix = "method";
+
+    /**
+     * Включение гистограмм для времени выполнения методов.
+     * По умолчанию {@code true}.
+     */
     private boolean histogram = true;
+
+    /**
+     * Процентили для гистограмм. Определяет, для каких процентилей
+     * рассчитывать значения (например, p50, p95, p99).
+     * По умолчанию {@code [0.5, 0.95, 0.99]}.
+     */
     private double[] percentiles = {0.5, 0.95, 0.99};
 
     /**
-     * Устанавливает массив процентилей для гистограмм.
+     * Устанавливает массив процентилей.
      *
-     * @param percentiles новый массив процентилей
-     * @throws IllegalArgumentException если массив пустой или содержит недопустимые значения
+     * @param percentiles новый массив процентилей (не должен быть пустым)
      */
     public void setPercentiles(double[] percentiles) {
         if (percentiles != null && percentiles.length > 0) {
             this.percentiles = percentiles;
         }
-    }
-
-    /**
-     * Устанавливает процентили из строкового представления.
-     *
-     * <p>Формат строки: значения, разделенные запятыми, например: "0.5,0.95,0.99"</p>
-     *
-     * @param percentiles строка с процентилями, разделенными запятыми
-     */
-    public void setPercentiles(String percentiles) {
-        if (percentiles != null && !percentiles.trim().isEmpty()) {
-            try {
-                String[] parts = percentiles.split(",");
-                this.percentiles = Arrays.stream(parts)
-                        .map(String::trim)
-                        .filter(s -> !s.isEmpty())
-                        .mapToDouble(Double::parseDouble)
-                        .toArray();
-            } catch (NumberFormatException e) {
-                // При ошибке парсинга используем значения по умолчанию
-                this.percentiles = new double[]{0.5, 0.95, 0.99};
-            }
-        }
-    }
-
-    /**
-     * Возвращает строковое представление объекта.
-     *
-     * @return строковое представление конфигурационных свойств
-     */
-    @Override
-    public String toString() {
-        return "MethodMetricsProperties{" +
-                "enabled=" + enabled +
-                ", prefix='" + prefix + '\'' +
-                ", histogram=" + histogram +
-                ", percentiles=" + Arrays.toString(percentiles) +
-                '}';
     }
 }
