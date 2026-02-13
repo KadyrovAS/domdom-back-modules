@@ -1,4 +1,4 @@
-package com.dom_dom.metrics.annotation;
+package ru.domdom.metrics.annotation;
 
 import org.junit.jupiter.api.Test;
 import java.lang.reflect.Method;

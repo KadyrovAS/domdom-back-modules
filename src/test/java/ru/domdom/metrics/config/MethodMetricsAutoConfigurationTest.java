@@ -1,6 +1,6 @@
-package com.dom_dom.metrics.autoconfigure;
+package ru.domdom.metrics.config;
 
-import com.dom_dom.metrics.aspect.TimedMethodAspect;
+import ru.domdom.metrics.aspect.TimedMethodAspect;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
@@ -8,6 +8,7 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import ru.domdom.metrics.service.TimedMethodProcessor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -32,7 +33,7 @@ class MethodMetricsAutoConfigurationTest {
                 .run(context -> {
                     assertThat(context).hasSingleBean(MethodMetricsProperties.class);
                     assertThat(context.getBean(MethodMetricsProperties.class).isEnabled()).isTrue();
-                    assertThat(context).hasSingleBean(com.dom_dom.metrics.service.TimedMethodProcessor.class);
+                    assertThat(context).hasSingleBean(TimedMethodProcessor.class);
                     assertThat(context).hasSingleBean(TimedMethodAspect.class);
                 });
     }
@@ -43,7 +44,7 @@ class MethodMetricsAutoConfigurationTest {
                 .withPropertyValues("method.metrics.enabled=false")
                 .run(context -> {
                     assertThat(context).doesNotHaveBean(MethodMetricsProperties.class);
-                    assertThat(context).doesNotHaveBean(com.dom_dom.metrics.service.TimedMethodProcessor.class);
+                    assertThat(context).doesNotHaveBean(TimedMethodProcessor.class);
                     assertThat(context).doesNotHaveBean(TimedMethodAspect.class);
                 });
     }

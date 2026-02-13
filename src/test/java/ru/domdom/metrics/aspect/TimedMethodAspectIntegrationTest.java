@@ -1,8 +1,8 @@
-package com.dom_dom.metrics.aspect;
+package ru.domdom.metrics.aspect;
 
-import com.dom_dom.metrics.annotation.TimedMethod;
-import com.dom_dom.metrics.autoconfigure.MethodMetricsProperties;
-import com.dom_dom.metrics.service.TimedMethodProcessor;
+import ru.domdom.metrics.annotation.TimedMethod;
+import ru.domdom.metrics.config.MethodMetricsProperties;
+import ru.domdom.metrics.service.TimedMethodProcessor;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;

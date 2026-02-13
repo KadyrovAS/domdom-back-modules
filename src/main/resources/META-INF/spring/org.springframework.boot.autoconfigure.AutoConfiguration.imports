@@ -1,1 +1,1 @@
-com.dom_dom.metrics.autoconfigure.MethodMetricsAutoConfiguration
+ru.domdom.metrics.config.MethodMetricsAutoConfiguration

@@ -1,6 +1,8 @@
-package com.dom_dom.metrics.autoconfigure;
+package ru.domdom.metrics.config;
 
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+
 import java.util.Arrays;
 
 /**
@@ -27,90 +29,14 @@ import java.util.Arrays;
  * @author Кадыров Андрей
  * @since 1.0.0
  */
+@Data
 @ConfigurationProperties(prefix = "method.metrics", ignoreInvalidFields = true)
 public class MethodMetricsProperties {
 
-    /**
-     * Включение/отключение сбора метрик методов.
-     */
     private boolean enabled = true;
-
-    /**
-     * Префикс для всех метрик методов.
-     */
     private String prefix = "method";
-
-    /**
-     * Включение/отключение сбора гистограмм.
-     */
     private boolean histogram = true;
-
-    /**
-     * Процентили для гистограмм.
-     */
     private double[] percentiles = {0.5, 0.95, 0.99};
-    /**
-     * Возвращает флаг включения сбора метрик.
-     *
-     * @return true если сбор метрик включен, false в противном случае
-     */
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    /**
-     * Устанавливает флаг включения сбора метрик.
-     *
-     * @param enabled true для включения сбора метрик, false для отключения
-     */
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
-    }
-
-    /**
-     * Возвращает префикс для метрик.
-     *
-     * @return префикс метрик
-     */
-    public String getPrefix() {
-        return prefix;
-    }
-
-    /**
-     * Устанавливает префикс для метрик.
-     *
-     * @param prefix новый префикс для метрик
-     */
-    public void setPrefix(String prefix) {
-        this.prefix = prefix;
-    }
-
-    /**
-     * Возвращает флаг включения гистограмм.
-     *
-     * @return true если гистограммы включены, false в противном случае
-     */
-    public boolean isHistogram() {
-        return histogram;
-    }
-
-    /**
-     * Устанавливает флаг включения гистограмм.
-     *
-     * @param histogram true для включения гистограмм, false для отключения
-     */
-    public void setHistogram(boolean histogram) {
-        this.histogram = histogram;
-    }
-
-    /**
-     * Возвращает массив процентилей для гистограмм.
-     *
-     * @return массив процентилей
-     */
-    public double[] getPercentiles() {
-        return percentiles;
-    }
 
     /**
      * Устанавливает массив процентилей для гистограмм.

@@ -1,7 +1,7 @@
-package com.dom_dom.metrics.service;
+package ru.domdom.metrics.service;
 
-import com.dom_dom.metrics.annotation.TimedMethod;
-import com.dom_dom.metrics.autoconfigure.MethodMetricsProperties;
+import ru.domdom.metrics.annotation.TimedMethod;
+import ru.domdom.metrics.config.MethodMetricsProperties;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,7 +11,6 @@ import java.lang.reflect.Method;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 
 @ExtendWith(MockitoExtension.class)
 class TimedMethodProcessorEdgeCasesTest {

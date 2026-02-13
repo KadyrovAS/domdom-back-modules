@@ -1,7 +1,7 @@
-package com.dom_dom.metrics.annotation;
+package ru.domdom.metrics.annotation;
 
-import com.dom_dom.metrics.autoconfigure.MethodMetricsProperties;
-import com.dom_dom.metrics.service.TimedMethodProcessor;
+import ru.domdom.metrics.config.MethodMetricsProperties;
+import ru.domdom.metrics.service.TimedMethodProcessor;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 
