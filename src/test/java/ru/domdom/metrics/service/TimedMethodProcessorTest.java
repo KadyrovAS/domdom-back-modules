@@ -1,91 +1,78 @@
 package ru.domdom.metrics.service;
 
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import ru.domdom.metrics.annotation.TimedMethod;
+import ru.domdom.metrics.config.MethodMetricsProperties;
 
-import java.lang.reflect.Method;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.when;
 
-/**
- * Модульные тесты для {@link TimedMethodProcessor}.
- * <p>
- * Проверяют разрешение ключа метрики, запись выполнения и обработку исключений.
- * </p>
- *
- * @author Кадыров Андрей
- * @since 1.0.0
- */
 @ExtendWith(MockitoExtension.class)
 class TimedMethodProcessorTest {
 
-    @Mock
-    private MetricNameResolver nameResolver;
-
-    @Mock
-    private MetricFactory metricFactory;
+    private MeterRegistry meterRegistry;
+    private MethodMetricsProperties properties;
+    private TimedMethodProcessor processor;
 
     @Mock
     private ProceedingJoinPoint joinPoint;
 
-    @Mock
-    private TimedMethod annotation;
-
-    @Mock
-    private Timer timer;
-
-    @Mock
-    private Counter counter;
-
-    @InjectMocks
-    private TimedMethodProcessor processor;
-
-    private final String metricKey = "test.key";
-    private Method realMethod;
-
     @BeforeEach
-    void setUp() throws NoSuchMethodException {
-        realMethod = this.getClass().getMethod("dummyMethod");
-        lenient().when(nameResolver.resolve(joinPoint, annotation)).thenReturn(metricKey);
-        lenient().when(metricFactory.getTimer(metricKey, annotation, realMethod)).thenReturn(timer);
-        lenient().when(metricFactory.getCounter(metricKey, annotation, realMethod)).thenReturn(counter);
+    void setUp() {
+        meterRegistry = new SimpleMeterRegistry();
+        properties = new MethodMetricsProperties();
+        properties.setPercentiles(new double[]{0.5, 0.95});
+        processor = new TimedMethodProcessor(meterRegistry, properties);
     }
 
     @Test
-    void shouldResolveMetricKey() {
-        processor.resolveMetricKey(joinPoint, annotation);
-        verify(nameResolver).resolve(joinPoint, annotation);
+    void shouldRecordExecutionTimeAndCreateTimer() throws Throwable {
+        when(joinPoint.proceed()).thenReturn("result");
+
+        String metricName = "test.metric";
+        Map<String, String> tags = Map.of("env", "test");
+
+        Object result = processor.process(joinPoint, metricName, tags);
+
+        assertThat(result).isEqualTo("result");
+
+        // Преобразуем Map в List<Tag> вручную
+        List<Tag> tagList = tags.entrySet().stream()
+                .map(entry -> Tag.of(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList());
+
+        var timer = meterRegistry.find(metricName)
+                .tags(tagList)  // передаём List<Tag>
+                .timer();
+        assertThat(timer).isNotNull();
+        assertThat(timer.count()).isEqualTo(1);
     }
 
     @Test
-    void shouldRecordExecution() {
-        long duration = 1_000_000L;
+    void shouldRecordExecutionEvenIfMethodThrows() throws Throwable {
+        when(joinPoint.proceed()).thenThrow(new RuntimeException("error"));
 
-        processor.record(metricKey, annotation, realMethod, duration);
+        String metricName = "test.metric";
+        Map<String, String> tags = Map.of();
 
-        verify(metricFactory).getTimer(metricKey, annotation, realMethod);
-        verify(metricFactory).getCounter(metricKey, annotation, realMethod);
-        verify(counter).increment();
-        verify(timer).record(eq(duration), any());
+        assertThatThrownBy(() -> processor.process(joinPoint, metricName, tags))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("error");
+
+        var timer = meterRegistry.find(metricName).timer();
+        assertThat(timer).isNotNull();
+        assertThat(timer.count()).isEqualTo(1);
     }
-
-    @Test
-    void shouldHandleExceptionGracefully() {
-        when(metricFactory.getTimer(metricKey, annotation, realMethod)).thenThrow(new RuntimeException("test"));
-
-        processor.record(metricKey, annotation, realMethod, 1000L);
-
-        verify(counter, never()).increment();
-        verify(timer, never()).record(anyLong(), any());
-    }
-
-    public void dummyMethod() {}
 }

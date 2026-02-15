@@ -1,39 +1,26 @@
 package ru.domdom.metrics.aspect;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.aop.AopAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Component;
 import ru.domdom.metrics.annotation.TimedMethod;
-import ru.domdom.metrics.config.MethodMetricsAutoConfiguration;
+import ru.domdom.metrics.config.MethodMetricsProperties;
+import ru.domdom.metrics.service.TimedMethodProcessor;
 
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Базовый интеграционный тест для проверки работы {@link TimedMethodAspect}.
- * <p>
- * Проверяет:
- * <ul>
- *   <li>создание таймера и счётчика при вызове аннотированного метода</li>
- *   <li>применение дополнительных тегов из аннотации</li>
- * </ul>
- * Префикс метрик фиксирован через свойство {@code method.metrics.prefix=method}.
- * </p>
- *
- * @author Кадыров Андрей
- * @since 1.0.0
- */
-@SpringBootTest(properties = "method.metrics.prefix=method")
-@Import({ MethodMetricsAutoConfiguration.class, AopAutoConfiguration.class, TimedMethodAspectIntegrationTest.TestConfig.class })
+@SpringBootTest
+@Import(TimedMethodAspectIntegrationTest.TestConfig.class)
 public class TimedMethodAspectIntegrationTest {
 
     @Autowired
@@ -42,12 +29,32 @@ public class TimedMethodAspectIntegrationTest {
     @Autowired
     private MeterRegistry meterRegistry;
 
-    @TestConfiguration
+    @Configuration
     @EnableAspectJAutoProxy(proxyTargetClass = true)
     static class TestConfig {
         @Bean
         public MeterRegistry meterRegistry() {
             return new SimpleMeterRegistry();
+        }
+
+        @Bean
+        public MethodMetricsProperties methodMetricsProperties() {
+            MethodMetricsProperties props = new MethodMetricsProperties();
+            props.setEnabled(true);
+            props.setHistogram(true);
+            props.setPercentiles(new double[]{0.5, 0.95});
+            return props;
+        }
+
+        @Bean
+        public TimedMethodProcessor timedMethodProcessor(MeterRegistry meterRegistry,
+                                                         MethodMetricsProperties properties) {
+            return new TimedMethodProcessor(meterRegistry, properties);
+        }
+
+        @Bean
+        public TimedMethodAspect timedMethodAspect(TimedMethodProcessor processor) {
+            return new TimedMethodAspect(processor);
         }
 
         @Bean
@@ -58,12 +65,12 @@ public class TimedMethodAspectIntegrationTest {
 
     @Component
     static class TestService {
-        @TimedMethod(value = "test.service.method", description = "Test method")
+        @TimedMethod("test.service.method")
         public String annotatedMethod() {
             return "hello";
         }
 
-        @TimedMethod(extraTags = {"env=test"})
+        @TimedMethod(value = "test.service.withTags", extraTags = {"env", "test", "region", "ru"})
         public String methodWithTags() {
             return "world";
         }
@@ -73,13 +80,9 @@ public class TimedMethodAspectIntegrationTest {
     void shouldRecordMetricsForAnnotatedMethod() {
         testService.annotatedMethod();
 
-        var timer = meterRegistry.find("method.test.service.method.duration").timer();
-        var counter = meterRegistry.find("method.test.service.method.calls").counter();
-
+        var timer = meterRegistry.find("test.service.method").timer();
         assertThat(timer).isNotNull();
-        assertThat(counter).isNotNull();
         assertThat(timer.count()).isEqualTo(1);
-        assertThat(counter.count()).isEqualTo(1);
         assertThat(timer.totalTime(TimeUnit.NANOSECONDS)).isPositive();
     }
 
@@ -87,12 +90,12 @@ public class TimedMethodAspectIntegrationTest {
     void shouldApplyTagsFromAnnotation() {
         testService.methodWithTags();
 
-        var timer = meterRegistry.find("method.TestService.methodWithTags.duration")
-                .tag("env", "test").timer();
-        var counter = meterRegistry.find("method.TestService.methodWithTags.calls")
-                .tag("env", "test").counter();
-
+        var timer = meterRegistry.find("test.service.withTags")
+                .tags("env", "test", "region", "ru")
+                .timer();
         assertThat(timer).isNotNull();
-        assertThat(counter).isNotNull();
+
+        assertThat(timer.getId().getTags())
+                .contains(Tag.of("env", "test"), Tag.of("region", "ru"));
     }
 }

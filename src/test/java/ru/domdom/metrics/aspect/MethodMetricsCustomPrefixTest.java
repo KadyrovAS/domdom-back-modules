@@ -4,30 +4,20 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.aop.AopAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Component;
 import ru.domdom.metrics.annotation.TimedMethod;
-import ru.domdom.metrics.config.MethodMetricsAutoConfiguration;
+import ru.domdom.metrics.config.MethodMetricsProperties;
+import ru.domdom.metrics.service.TimedMethodProcessor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Интеграционный тест для проверки использования кастомного префикса метрик.
- * <p>
- * Устанавливает свойство {@code method.metrics.prefix=myapp} и проверяет,
- * что имена созданных метрик начинаются с {@code myapp.}.
- * </p>
- *
- * @author Кадыров Андрей
- * @since 1.0.0
- */
-@SpringBootTest(properties = "method.metrics.prefix=myapp")
-@Import({ MethodMetricsAutoConfiguration.class, AopAutoConfiguration.class, MethodMetricsCustomPrefixTest.TestConfig.class })
+@SpringBootTest
+@Import(MethodMetricsCustomPrefixTest.TestConfig.class)
 public class MethodMetricsCustomPrefixTest {
 
     @Autowired
@@ -36,12 +26,32 @@ public class MethodMetricsCustomPrefixTest {
     @Autowired
     private MeterRegistry meterRegistry;
 
-    @TestConfiguration
+    @Configuration
     @EnableAspectJAutoProxy(proxyTargetClass = true)
     static class TestConfig {
         @Bean
         public MeterRegistry meterRegistry() {
             return new SimpleMeterRegistry();
+        }
+
+        @Bean
+        public MethodMetricsProperties methodMetricsProperties() {
+            MethodMetricsProperties props = new MethodMetricsProperties();
+            props.setEnabled(true);
+            props.setHistogram(true);
+            props.setPercentiles(new double[]{0.5, 0.95});
+            return props;
+        }
+
+        @Bean
+        public TimedMethodProcessor timedMethodProcessor(MeterRegistry meterRegistry,
+                                                         MethodMetricsProperties properties) {
+            return new TimedMethodProcessor(meterRegistry, properties);
+        }
+
+        @Bean
+        public TimedMethodAspect timedMethodAspect(TimedMethodProcessor processor) {
+            return new TimedMethodAspect(processor);
         }
 
         @Bean
@@ -52,22 +62,18 @@ public class MethodMetricsCustomPrefixTest {
 
     @Component
     static class TestService {
-        @TimedMethod(value = "custom.method")
+        @TimedMethod("custom.method")
         public String annotatedMethod() {
             return "hello";
         }
     }
 
     @Test
-    void shouldUseCustomPrefix() {
+    void shouldUseExplicitMetricName() {
         testService.annotatedMethod();
 
-        var timer = meterRegistry.find("myapp.custom.method.duration").timer();
-        var counter = meterRegistry.find("myapp.custom.method.calls").counter();
-
+        var timer = meterRegistry.find("custom.method").timer();
         assertThat(timer).isNotNull();
-        assertThat(counter).isNotNull();
         assertThat(timer.count()).isEqualTo(1);
-        assertThat(counter.count()).isEqualTo(1);
     }
 }

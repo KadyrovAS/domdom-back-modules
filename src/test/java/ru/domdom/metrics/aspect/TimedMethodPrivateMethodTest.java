@@ -16,17 +16,8 @@ import ru.domdom.metrics.config.MethodMetricsAutoConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Интеграционный тест для проверки поведения аспекта с private методами.
- * <p>
- * Spring AOP не перехватывает private методы, поэтому метрики для них создаваться не должны.
- * </p>
- *
- * @author Кадыров Андрей
- * @since 1.0.0
- */
-@SpringBootTest(properties = "method.metrics.prefix=method")
-@Import({ MethodMetricsAutoConfiguration.class, AopAutoConfiguration.class, TimedMethodPrivateMethodTest.TestConfig.class })
+@SpringBootTest
+@Import({MethodMetricsAutoConfiguration.class, AopAutoConfiguration.class, TimedMethodPrivateMethodTest.TestConfig.class})
 public class TimedMethodPrivateMethodTest {
 
     @Autowired
@@ -63,13 +54,9 @@ public class TimedMethodPrivateMethodTest {
 
     @Test
     void shouldNotInterceptPrivateMethod() {
-        service.callPrivate(); // вызывает private метод внутри того же класса
+        service.callPrivate();
 
-        // Метрики не должны быть созданы
-        var timer = meterRegistry.find("method.private.method.duration").timer();
-        var counter = meterRegistry.find("method.private.method.calls").counter();
-
+        var timer = meterRegistry.find("private.method").timer();
         assertThat(timer).isNull();
-        assertThat(counter).isNull();
     }
 }

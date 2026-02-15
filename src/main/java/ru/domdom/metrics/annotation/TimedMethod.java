@@ -5,44 +5,17 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * Аннотация для измерения времени выполнения методов.
- * Применяется к методам, которые необходимо мониторить.
- * Методы, помеченные этой аннотацией, будут автоматически
- * измеряться и их метрики будут отправляться в Prometheus.
- *
- * <p>Пример использования:</p>
- * <pre>
- * {@code
- * @TimedMethod(value = "user.service.getUser",
- *              description = "Получение пользователя по ID",
- *              extraTags = {"env=prod", "service=user-service"})
- * public User getUser(Long id) {
- *     return userRepository.findById(id);
- * }
- * }
- * </pre>
- *
- * @author Кадыров Андрей
- * @since 1.0.0
- */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface TimedMethod {
-
     /**
-     * Название метода для метрик.
-     * Если не указано, будет использовано имя метода.
+     * Имя метрики (обязательное поле).
      */
-    String value() default "";
+    String value();
 
     /**
-     * Описание метода (необязательно).
-     */
-    String description() default "";
-
-    /**
-     * Дополнительные теги для метрик в формате "key=value".
+     * Дополнительные теги в виде пар "ключ, значение".
+     * Например: @TimedMethod(value = "my.metric", extraTags = {"env", "prod", "region", "ru"})
      */
     String[] extraTags() default {};
 }

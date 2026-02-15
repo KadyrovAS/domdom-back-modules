@@ -1,25 +1,13 @@
 package ru.domdom.metrics.annotation;
 
 import org.junit.jupiter.api.Test;
-import java.lang.reflect.Method;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import java.lang.reflect.Method;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Тестовый класс для проверки аннотации {@link TimedMethod}.
- *
- * <p>Тесты проверяют различные аспекты работы аннотации:</p>
- * <ul>
- *   <li>Наличие правильных мета-аннотаций</li>
- *   <li>Работу атрибутов аннотации</li>
- *   <li>Корректность значений по умолчанию</li>
- * </ul>
- *
- * @author Кадыров Андрей
- * @since 1.0.0
- */
 class TimedMethodAnnotationTest {
 
     @Test
@@ -32,7 +20,7 @@ class TimedMethodAnnotationTest {
     @Test
     void annotationShouldHaveCorrectAttributes() throws NoSuchMethodException {
         class TestClass {
-            @TimedMethod(value = "testMethod", description = "Test", extraTags = {"a=b"})
+            @TimedMethod(value = "test.method", extraTags = {"key1", "value1", "key2", "value2"})
             public void test() {}
         }
 
@@ -40,8 +28,7 @@ class TimedMethodAnnotationTest {
         TimedMethod annotation = method.getAnnotation(TimedMethod.class);
 
         assertThat(annotation).isNotNull();
-        assertThat(annotation.value()).isEqualTo("testMethod");
-        assertThat(annotation.description()).isEqualTo("Test");
-        assertThat(annotation.extraTags()).containsExactly("a=b");
+        assertThat(annotation.value()).isEqualTo("test.method");
+        assertThat(annotation.extraTags()).containsExactly("key1", "value1", "key2", "value2");
     }
 }

@@ -1,63 +1,44 @@
 package ru.domdom.metrics.service;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Timer;
 import org.aspectj.lang.ProceedingJoinPoint;
-import org.springframework.stereotype.Service;
-import ru.domdom.metrics.annotation.TimedMethod;
+import ru.domdom.metrics.config.MethodMetricsProperties;
+import ru.domdom.metrics.exception.MissingMetricNameException;
 
-import java.lang.reflect.Method;
-import java.util.concurrent.TimeUnit;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-/**
- * Оркестратор записи метрик времени выполнения методов.
- *
- * <p>Получает ключ метрики через {@link MetricNameResolver}, затем получает или создаёт
- * таймер и счётчик через {@link MetricFactory}, и записывает время выполнения.
- * Обрабатывает исключения, логируя ошибки, но не прерывая выполнение метода.
- *
- * @author Кадыров Андрей
- * @since 1.0.0
- * @see MetricNameResolver
- * @see MetricFactory
- * @see TimedMethod
- */
-@Slf4j
-@Service
-@RequiredArgsConstructor
 public class TimedMethodProcessor {
 
-    private final MetricNameResolver nameResolver;
-    private final MetricFactory metricFactory;
+    private final MeterRegistry meterRegistry;
+    private final MethodMetricsProperties properties;
 
-    /**
-     * Формирует ключ метрики для точки соединения и аннотации.
-     *
-     * @param joinPoint  точка соединения
-     * @param annotation аннотация {@link TimedMethod}
-     * @return ключ метрики
-     */
-    public String resolveMetricKey(ProceedingJoinPoint joinPoint, TimedMethod annotation) {
-        return nameResolver.resolve(joinPoint, annotation);
+    public TimedMethodProcessor(MeterRegistry meterRegistry, MethodMetricsProperties properties) {
+        this.meterRegistry = meterRegistry;
+        this.properties = properties;
     }
 
-    /**
-     * Записывает метрику выполнения метода.
-     *
-     * @param metricKey     ключ метрики
-     * @param annotation    аннотация {@link TimedMethod}
-     * @param method        выполняемый метод (нужен для сигнатуры)
-     * @param durationNanos время выполнения в наносекундах
-     */
-    public void record(String metricKey, TimedMethod annotation, Method method, long durationNanos) {
+    public Object process(ProceedingJoinPoint joinPoint, String metricName, Map<String, String> extraTags) throws Throwable {
+        if (metricName == null || metricName.trim().isEmpty()) {
+            throw new MissingMetricNameException("Metric name must not be empty");
+        }
+
+        Timer.Sample sample = Timer.start(meterRegistry);
         try {
-            var timer = metricFactory.getTimer(metricKey, annotation, method);
-            var counter = metricFactory.getCounter(metricKey, annotation, method);
-            counter.increment();
-            timer.record(durationNanos, TimeUnit.NANOSECONDS);
-            log.debug("Recorded execution of {}: {} ns", metricKey, durationNanos);
-        } catch (Exception e) {
-            log.error("Failed to record metric for key: {}", metricKey, e);
+            return joinPoint.proceed();
+        } finally {
+            List<Tag> tags = extraTags.entrySet().stream()
+                    .map(entry -> Tag.of(entry.getKey(), entry.getValue()))
+                    .collect(Collectors.toList());
+
+            Timer.Builder timerBuilder = Timer.builder(metricName)
+                    .tags(tags)
+                    .publishPercentiles(properties.getPercentiles()); // <-- теперь должно работать
+
+            sample.stop(timerBuilder.register(meterRegistry));
         }
     }
 }
