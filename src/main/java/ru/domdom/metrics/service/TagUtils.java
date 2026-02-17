@@ -14,9 +14,7 @@ public final class TagUtils {
             return Map.of();
         }
         if (extraTags.length % 2 != 0) {
-            throw new InvalidExtraTagsException(
-                    "extraTags must have even number of elements (key-value pairs), but got: " + extraTags.length
-            );
+            throw new InvalidExtraTagsException(extraTags.length);
         }
         Map<String, String> tags = new HashMap<>();
         for (int i = 0; i < extraTags.length; i += 2) {

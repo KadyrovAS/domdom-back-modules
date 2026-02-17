@@ -1,5 +1,6 @@
 package ru.domdom.metrics.aspect;
 
+import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -10,13 +11,10 @@ import ru.domdom.metrics.service.TagUtils;
 import java.util.Map;
 
 @Aspect
+@RequiredArgsConstructor
 public class TimedMethodAspect {
 
     private final TimedMethodProcessor processor;
-
-    public TimedMethodAspect(TimedMethodProcessor processor) {
-        this.processor = processor;
-    }
 
     @Around("@annotation(timed)")
     public Object measure(ProceedingJoinPoint joinPoint, TimedMethod timed) throws Throwable {
